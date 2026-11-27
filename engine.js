@@ -94,7 +94,13 @@
   function duocMua(d, l) { if (l === "bo") return false; if (l === "dat") return (d.loaiCan.indexOf("dat") >= 0 || laMuaXo(d)) && giaDon(d, "dat") > 0; return d.loaiCan.indexOf(l) >= 0; }
   // Tiền về tay của nông dân = tổng (kg từng loại × giá loại đó) − chi phí nông dân phải lo (công hái, xe).
   // thucTe = false: ước tính theo tỷ lệ loại nông dân khai. thucTe = true: theo biên bản cân (tyLe có cả % bỏ, kg là tổng cân).
-  function tinhTien(don, tyLe, kg, giaGhiDe, thucTe) {
+  // Chi phí công hái, xe của từng nông dân (nông dân tự cập nhật ở trang Vườn); chưa khai thì dùng mức HTX
+  function chiPhiNd(ndId) {
+    var nd = ndId ? nongDan(ndId) : null, c = nd && nd.chiPhi;
+    return { congHai: c && c.congHai >= 0 ? c.congHai : S.thamSo.congHai, xe: c && c.xe >= 0 ? c.xe : S.thamSo.xeCho, rieng: !!c };
+  }
+  function tinhTien(don, tyLe, kg, giaGhiDe, thucTe, ndId) {
+    var cp = chiPhiNd(ndId);
     var g = giaGhiDe || { loai1: giaDon(don, "loai1"), loai2: giaDon(don, "loai2"), dat: giaDon(don, "dat") };
     var dong = [], tong = 0, kgBan = 0, kgKhongMua = 0, phan = {};
     if (!thucTe && !laMuaXo(don)) {
@@ -110,8 +116,8 @@
       dong.push({ l: l, kg: k, gia: g[l], tien: k * g[l] }); tong += k * g[l]; kgBan += k;
     });
     var tru = [];
-    if (don.congHai === "nongdan") { var t1 = kgBan * S.thamSo.congHai; tru.push(["Công hái (nông dân trả)", t1]); tong -= t1; }
-    if (don.xe === "nongdan") { var t2 = kgBan * S.thamSo.xeCho; tru.push(["Xe chở (nông dân lo)", t2]); tong -= t2; }
+    if (don.congHai === "nongdan") { var t1 = kgBan * cp.congHai; tru.push(["Công hái " + cp.congHai.toLocaleString("vi-VN") + " đ/kg (nông dân trả)", t1]); tong -= t1; }
+    if (don.xe === "nongdan") { var t2 = kgBan * cp.xe; tru.push(["Xe chở " + cp.xe.toLocaleString("vi-VN") + " đ/kg (nông dân lo)", t2]); tong -= t2; }
     return { dong: dong, tru: tru, tong: tong, kgBan: kgBan, kgKhongMua: kgKhongMua, giaTri: dong.reduce(function (s, x) { return s + x.tien; }, 0) };
   }
   function tyLeMacDinh(don) { return don.loaiCan.length === 1 && don.loaiCan[0] === "dat" ? { dat: 100 } : { loai1: 55, loai2: 30, dat: 15 }; }
@@ -142,7 +148,7 @@
     return S.donMua.filter(function (d) { return d.trangThai === "mo"; }).map(function (d) {
       var lech = Math.abs(soNgay(lua.ngayChin, d.ngayCat));
       var kg = Math.min(d.kg - daNhan(d), kgGiaoDuoc(d, lua));
-      var t = tinhTien(d, tl, kg);
+      var t = tinhTien(d, tl, kg, null, false, lua.nongDan);
       var diem = t.tong / 1e6 - lech * 0.6 + (d.vung === nongDan(lua.nongDan).vung ? 1 : 0);
       return { don: d, kg: kg, tien: t, lechNgay: lech, diem: diem };
     }).filter(function (x) { return x.kg > 0 && x.lechNgay <= 6 && x.tien.kgBan > 0; }).sort(function (a, b) { return b.diem - a.diem; });
@@ -158,7 +164,7 @@
     var T = soNgay(D.homNay, d.ngayCat);
     var ref = giaThamChieu(d.vung);
     var bd = d.cheDoGia === "biendo" ? bienDo(d.vung, d.ngayCat, T) : null;
-    var t = tinhTien(d, lua ? tyLeConLai(lua) : tyLeMacDinh(d), kg);
+    var t = tinhTien(d, lua ? tyLeConLai(lua) : tyLeMacDinh(d), kg, null, false, ndId);
     var tienCoc = Math.round(t.giaTri * phanTramCoc(d.nguoiMua) / 100 / 1000) * 1000;
     var hd = {
       id: "HD-" + (++S.demHD), don: donId, nongDan: ndId, lua: luaId || null, kg: kg, ngayKy: D.homNay,
@@ -176,7 +182,7 @@
     if (!h.gia) h.gia = { loai1: giaDon(d, "loai1"), loai2: giaDon(d, "loai2"), dat: giaDon(d, "dat") };
     if (!h.giaThamChieuLucKy) h.giaThamChieuLucKy = giaThamChieu(d.vung).loai1;
     if (h.bienDo === undefined) h.bienDo = d.cheDoGia === "biendo" ? bienDo(d.vung, d.ngayCat, Math.max(1, soNgay(h.ngayKy, d.ngayCat))).b : null;
-    if (!h.coc.tien) { var t = tinhTien(d, tyLeMacDinh(d), h.kg); h.coc.tien = Math.round(t.giaTri * phanTramCoc(d.nguoiMua) / 100 / 1000) * 1000; h.coc.phanTram = phanTramCoc(d.nguoiMua); var nd = nongDan(h.nongDan); h.coc.baoLanh = nd.thanhVienHTX ? "HTX bảo lãnh nghĩa vụ của nông dân" : null; h.coc.cocNongDan = 0; }
+    if (!h.coc.tien) { var t = tinhTien(d, tyLeMacDinh(d), h.kg, null, false, h.nongDan); h.coc.tien = Math.round(t.giaTri * phanTramCoc(d.nguoiMua) / 100 / 1000) * 1000; h.coc.phanTram = phanTramCoc(d.nguoiMua); var nd = nongDan(h.nongDan); h.coc.baoLanh = nd.thanhVienHTX ? "HTX bảo lãnh nghĩa vụ của nông dân" : null; h.coc.cocNongDan = 0; }
   });
 
   function tinhTrangGia(hd) {
@@ -244,7 +250,7 @@
     D: D, get S() { return S; }, luu: luu, datLai: datLai, fmt: fmt, TEN_LOAI: TEN_LOAI, TEN_MUA: TEN_MUA, TRANG_THAI: TRANG_THAI, TRANG_THAI_COC: TRANG_THAI_COC,
     soNgay: soNgay, congNgay: congNgay, muaVu: muaVu, vung: vung, nguoiMua: nguoiMua, nongDan: nongDan, donMua: donMua, hopDong: hopDong, luaCam: luaCam,
     giaThamChieu: giaThamChieu, congBoGia: congBoGia, trungVi: trungVi, bienDo: bienDo, xoaCacheBD: xoaCacheBD,
-    tinhTien: tinhTien, laMuaXo: laMuaXo, conLaiTheoLoai: conLaiTheoLoai, tongConLai: tongConLai, tyLeConLai: tyLeConLai, kgGiaoDuoc: kgGiaoDuoc, tyLeMacDinh: tyLeMacDinh, phanTramCoc: phanTramCoc, giaDon: giaDon,
+    tinhTien: tinhTien, chiPhiNd: chiPhiNd, laMuaXo: laMuaXo, conLaiTheoLoai: conLaiTheoLoai, tongConLai: tongConLai, tyLeConLai: tyLeConLai, kgGiaoDuoc: kgGiaoDuoc, tyLeMacDinh: tyLeMacDinh, phanTramCoc: phanTramCoc, giaDon: giaDon,
     ghepChoLua: ghepChoLua, ghepChoDon: ghepChoDon, daNhan: daNhan, taoHopDong: taoHopDong, tinhTrangGia: tinhTrangGia, truocChot: truocChot, HD: HD
   };
 })();

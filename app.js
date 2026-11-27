@@ -11,9 +11,9 @@
 
   // ---------- Khung ----------
   var MENU = {
-    khach: [["#/", "🏠", "Trang chủ"], ["#/cau-chuyen", "🍊", "Câu chuyện"], ["#/tieu-chuan", "📏", "Tiêu chuẩn"], ["#/quy-che", "⚖️", "Quy chế"], ["#/dang-nhap", "👤", "Đăng nhập"]],
-    nd: [["#/nd", "🏠", "Hôm nay"], ["#/nd/don", "🛒", "Tìm đơn"], ["#/nd/hop-dong", "📄", "Hợp đồng"], ["#/nd/vuon", "🌳", "Vườn"], ["#/quy-che", "⚖️", "Quy chế"]],
-    nm: [["#/nm", "🏠", "Nguồn hàng"], ["#/nm/dang", "➕", "Đăng đơn"], ["#/nm/hop-dong", "📄", "Hợp đồng"], ["#/tieu-chuan", "📏", "Tiêu chuẩn"], ["#/quy-che", "⚖️", "Quy chế"]],
+    khach: [["#/", "🏠", "Trang chủ"], ["#/cau-chuyen", "🍊", "Câu chuyện"], ["#/huong-dan", "❓", "Hướng dẫn"], ["#/quy-che", "⚖️", "Quy chế"], ["#/dang-nhap", "👤", "Đăng nhập"]],
+    nd: [["#/nd", "🏠", "Hôm nay"], ["#/nd/don", "🛒", "Tìm đơn"], ["#/nd/hop-dong", "📄", "Hợp đồng"], ["#/nd/vuon", "🌳", "Vườn"], ["#/huong-dan", "❓", "Hướng dẫn"]],
+    nm: [["#/nm", "🏠", "Nguồn hàng"], ["#/nm/dang", "➕", "Đăng đơn"], ["#/nm/hop-dong", "📄", "Hợp đồng"], ["#/tieu-chuan", "📏", "Tiêu chuẩn"], ["#/huong-dan", "❓", "Hướng dẫn"]],
     htx: [["#/htx", "📊", "Tổng quan"], ["#/htx/gia", "💹", "Giá và biên độ"], ["#/htx/giam-sat", "🛡️", "Giám sát"], ["#/htx/cau", "📣", "Nguồn cầu"], ["#/htx/trinh-dien", "🧪", "Trình diễn"]]
   };
   function khung(html, hash) {
@@ -52,14 +52,14 @@
       t.tru.map(function (x) { return '<div class="dong"><span>Trừ ' + x[0] + "</span><b>−" + f.vnd(x[1]) + "</b></div>"; }).join("") +
       (t.kgKhongMua ? '<div class="dong nho"><span>' + (thucTe ? "Không tính tiền (trái bỏ hoặc không đúng loại đơn mua)" : "Trái dạt vượt mức đơn nhận (bán cho đơn khác)") + "</span><span>" + f.kg(t.kgKhongMua) + "</span></div>" : "") +
       '<div class="dong tong"><span>' + (thucTe ? "Nông dân thực nhận" : "Tiền về tay") + "</span><span>" + f.vnd(t.tong) + "</span></div>" +
-      '<p class="nho" style="margin:8px 0 0">' + (thucTe ? "Tính theo biên bản cân và phân loại tại vườn." : "Tiền về tay = tiền bán từng loại trái trừ chi phí bạn phải lo (công hái, xe). Đây là số ước tính theo tỷ lệ loại bạn khai; số tiền thật tính theo biên bản cân tại vườn. Cọc là tiền của người mua, không trừ vào phần của bạn.") + "</p></div>";
+      '<p class="nho" style="margin:8px 0 0">' + (thucTe ? "Tính theo biên bản cân và phân loại tại vườn." : "Tiền về tay = tiền bán từng loại trái trừ chi phí bạn phải lo (công hái, xe). Đây là số ước tính theo tỷ lệ loại bạn khai; số tiền thật tính theo biên bản cân tại vườn. Cọc là tiền của người mua, không trừ vào phần của bạn.") + ' <a href="#/huong-dan?muc=tien">Xem cách tính</a></p></div>';
   }
   function giaiThichBienDo(bd, vId) {
     var ts = S().thamSo;
     return '<div class="the"><h3>Biên độ ±' + so(bd.b) + "% được tính ra sao</h3>" +
       '<div class="cong-thuc">B = phân vị ' + ts.phanVi + " của |Δ giá trong " + bd.T + " ngày|<br>dữ liệu: " + esc(bd.cap) + ", " + bd.tenMua + ", " + ts.cuaSoNam + " năm gần nhất</div>" +
       '<p class="nho">' + bd.n + " lần quan sát. Trong quá khứ, cứ 10 lần thì khoảng " + Math.round(ts.phanVi / 10) + " lần giá chỉ lệch trong " + so(bd.tho) + "% sau " + bd.T + " ngày. Làm tròn " + ts.lamTron + "%, giới hạn " + ts.bienDoMin + "% đến " + ts.bienDoMax + "%" + (bd.biKep ? " (đã bị giới hạn)" : "") + ". Lệch trung bình: " + so(bd.trungBinh) + "%.</p>" +
-      '<p class="nho">Ý nghĩa: giá chung dao động trong mức này thì cả hai bên giữ giá đã chốt. Vượt mức này trước xác nhận lần 2 thì bên bị thiệt được đề nghị giá mới hoặc rút không phạt.</p></div>';
+      '<p class="nho">Ý nghĩa: giá chung dao động trong mức này thì cả hai bên giữ giá đã chốt. Vượt mức này trước xác nhận lần 2 thì bên bị thiệt được đề nghị giá mới hoặc rút không phạt. <a href="#/huong-dan?muc=bien-do">Đọc hướng dẫn biên độ giá</a></p></div>';
   }
 
   // ---------- Trang công khai ----------
@@ -113,6 +113,51 @@
       '<div class="cuon"><table><tr><th>Vùng</th><th>Đơn 3 ngày</th><th>Đơn 7 ngày</th><th>Đơn 14 ngày</th></tr>' + D.vung.map(function (v) { return "<tr><td>" + v.ten + "</td>" + [3, 7, 14].map(function (T) { return "<td>±" + so(M.bienDo(v.id, M.congNgay(D.homNay, T), T).b) + "%</td>"; }).join("") + "</tr>"; }).join("") + "</table></div></div>" +
       '<div class="the xanh"><h3>Căn cứ pháp lý chính</h3><p class="nho">Bộ luật Dân sự 2015: hợp đồng mua bán tài sản, đặt cọc (Điều 328: bên đặt cọc từ chối thì mất cọc, bên nhận cọc từ chối thì trả cọc và một khoản tương đương, trừ khi có thỏa thuận khác; quy chế sàn là thỏa thuận khác có mức phạt theo giai đoạn), phạt vi phạm và bồi thường, sự kiện bất khả kháng. Luật Giao dịch điện tử 2023: hợp đồng điện tử có giá trị như văn bản. Luật Hợp tác xã 2023: HTX cung cấp dịch vụ cho thành viên. Giữ hộ tiền là dịch vụ trung gian thanh toán, phải do ngân hàng hoặc tổ chức được cấp phép thực hiện, hoặc HTX giữ như bên nhận cọc; trang web chỉ hiển thị trạng thái.</p></div>';
   }
+  function trangHuongDan() {
+    var ts = S().thamSo, p = phien(), vId = p && p.vai === "nd" ? M.nongDan(p.id).vung : "traon", v = M.vung(vId);
+    var ngay7 = M.congNgay(D.homNay, 7), bd = M.bienDo(vId, ngay7, 7), g = M.giaThamChieu(vId).loai1;
+    var duoi = Math.round(g * (1 - bd.b / 100) / 50) * 50, tren = Math.round(g * (1 + bd.b / 100) / 50) * 50;
+    var muc = function (id, tieuDe, noiDung) { return '<div class="the" id="' + id + '"><h2>' + tieuDe + "</h2>" + noiDung + "</div>"; };
+    return "<h1>Hướng dẫn sử dụng</h1><p class='nho'>Dành cho nông dân, thương lái và người mua. Bấm vào từng mục để đọc.</p>" +
+      '<div class="the"><div class="nuts" style="margin:0"><a class="nut phu" href="#/huong-dan?muc=tien">Tiền về tay</a><a class="nut phu" href="#/huong-dan?muc=bien-do">Biên độ giá</a><a class="nut phu" href="#/huong-dan?muc=cap-nhat">Nông dân cập nhật gì</a><a class="nut phu" href="#/huong-dan?muc=nguoi-mua">Người mua làm gì</a><a class="nut phu" href="#/huong-dan?muc=coc">Cọc</a></div></div>' +
+      muc("tien", "1. Tiền về tay là gì",
+        "<p>Là số tiền nông dân dự kiến cầm về khi bán lứa cam cho một người mua. Không phải nợ, không phải tiền vay.</p>" +
+        '<div class="cong-thuc">Tiền về tay = (kg loại 1 × giá loại 1) + (kg loại 2 × giá loại 2) + (kg trái dạt × giá dạt) − công hái − xe chở</div>' +
+        '<div class="cuon"><table><tr><th>Phần</th><th>Lấy từ đâu</th><th>Ai cập nhật</th></tr>' +
+        "<tr><td>Sản lượng và tỷ lệ từng loại</td><td>Lứa cam khai ở trang Vườn</td><td>Nông dân</td></tr>" +
+        "<tr><td>Giá từng loại</td><td>Đơn mua</td><td>Người mua</td></tr>" +
+        "<tr><td>Ai lo công hái, xe</td><td>Đơn mua</td><td>Người mua</td></tr>" +
+        "<tr><td>Mức công hái, xe (đ/kg)</td><td>Chi phí của tôi, trang Vườn (chưa khai thì dùng mức HTX " + ts.congHai + " và " + ts.xeCho + " đ/kg)</td><td>Nông dân</td></tr>" +
+        "<tr><td>Kg và loại thật</td><td>Biên bản cân tại vườn</td><td>Hai bên cùng ký</td></tr></table></div>" +
+        '<p class="nho"><b>Mua xô</b>: người mua lấy cả vườn, tính trên tổng số kg, trái dạt nhận tới mức tối đa ghi trong đơn. <b>Mua lựa</b>: người mua chỉ lấy vài loại (ví dụ quán nước ép lấy loại 2 và dạt); chỉ tính các loại đó, phần còn lại bán cho đơn khác.</p>' +
+        '<p class="nho">Trước khi cân đây là số <b>ước tính</b>. Sau khi cân, web tính lại theo biên bản và hiện "Nông dân thực nhận". Cọc là tiền của người mua, được trừ vào phần người mua còn phải chuyển, không trừ vào tiền của nông dân.</p>') +
+      muc("bien-do", "2. Biên độ giá là gì",
+        "<p>Giá cam lên xuống mỗi ngày. Biên độ là <b>khoảng lên xuống được chấp nhận</b> quanh giá tham chiếu tính từ lúc ký. Giá chung còn trong khoảng này thì hai bên giữ đúng giá đã ký, không ai được đòi đổi.</p>" +
+        "<h3>Không cố định 10%</h3><p>Mỗi vùng, mỗi mùa, mỗi độ dài đơn có mức dao động khác nhau, nên biên độ được tính riêng từ lịch sử giá:</p>" +
+        '<div class="buoc">' +
+        "<div><b>Giá tham chiếu:</b> HTX công bố mỗi ngày, lấy số ở giữa (trung vị) của ít nhất 3 báo giá loại 1 từ vựa, chợ đầu mối, thương lái. Một nguồn báo sai không kéo lệch được.</div>" +
+        "<div><b>Xem lại quá khứ:</b> trong " + ts.cuaSoNam + " năm gần nhất, cùng vùng, cùng mùa, sau đúng số ngày bằng đơn này (ví dụ 7 ngày), giá đã thay đổi bao nhiêu phần trăm.</div>" +
+        "<div><b>Lấy mức " + ts.phanVi + "%:</b> chọn mức mà " + Math.round(ts.phanVi / 10) + " trên 10 lần trong quá khứ giá chỉ dao động trong đó. Đó là biên độ.</div>" +
+        "<div><b>Giới hạn:</b> làm tròn " + so(ts.lamTron) + "%, không dưới " + ts.bienDoMin + "% và không quá " + ts.bienDoMax + "%. Vùng chưa đủ " + ts.quanSatToiThieu + " lần quan sát thì dùng dữ liệu cả tỉnh.</div>" +
+        "<div><b>Đơn ngắn:</b> cắt trong " + ts.ngayGiaCoDinhToiDa + " ngày thì chốt giá cứng, không dùng biên độ.</div></div>" +
+        '<div class="the xanh" style="margin-top:10px"><b>Ví dụ đang áp dụng</b><p class="nho" style="margin:6px 0 0">Vùng ' + v.ten + ", đơn 7 ngày: biên độ ±" + so(bd.b) + "%. Giá tham chiếu hôm nay " + g.toLocaleString("vi-VN") + " đ/kg, nên giá chung trong khoảng " + duoi.toLocaleString("vi-VN") + " đến " + tren.toLocaleString("vi-VN") + " đ/kg thì hai bên giữ giá đã ký.</p></div>" +
+        '<h3>Khi giá chung ra khỏi khoảng</h3><div class="cuon"><table><tr><th>Lúc nào</th><th>Chuyện gì xảy ra</th></tr>' +
+        "<tr><td>Trong biên độ</td><td>Giữ đúng giá đã ký</td></tr>" +
+        "<tr><td>Vượt biên độ, trước xác nhận lần 2</td><td>Bên bị thiệt (giá giảm: người mua; giá tăng: nông dân) được gửi đề nghị giá mới. Bên kia đồng ý, hoặc từ chối thì hủy không phạt, cọc trả lại.</td></tr>" +
+        "<tr><td>Sau xác nhận lần 2</td><td>Giá đã khóa, không thương lượng lại</td></tr></table></div>" +
+        '<p class="nho">Web tự so giá mỗi ngày và hiện thanh màu trong từng hợp đồng: xanh là trong biên độ, cam là đã vượt. Cách tính và bảng biên độ đầy đủ nằm ở trang <a href="#/quy-che">Quy chế</a>.</p>') +
+      muc("cap-nhat", "3. Nông dân cần cập nhật gì",
+        '<div class="buoc"><div><b>Khai lứa cam</b> (trang Vườn): sản lượng, ngày chín, tỷ lệ loại 1, loại 2, dạt. Đo tỷ lệ bằng thẻ đo cỡ của HTX trên 50 trái bất kỳ.</div>' +
+        "<div><b>Sửa lứa cam</b> khi đo lại hoặc sản lượng đổi: bấm \"Cập nhật lứa này\". Hợp đồng đã ký không đổi.</div>" +
+        "<div><b>Khai chi phí của tôi</b>: công hái và xe theo giá thật ở địa phương, để tiền về tay sát thực tế.</div>" +
+        "<div><b>Chọn đơn</b> ở trang Hôm nay hoặc Tìm đơn, xem tiền về tay rồi bấm nhận.</div></div>") +
+      muc("nguoi-mua", "4. Thương lái và người mua làm gì",
+        '<div class="buoc"><div><b>Đăng đơn</b>: sản lượng, dung sai, loại cần mua, giá từng loại, ngày cắt, ai lo công hái và xe. Web báo ngay đơn chốt giá cứng hay theo biên độ bao nhiêu phần trăm.</div>' +
+        "<div><b>Nộp cọc</b> khi có nông dân nhận đơn.</div><div><b>Xác nhận lần 2</b> trước ngày cắt " + ts.gioXacNhan2 + " giờ. Từ lúc này giá khóa.</div>" +
+        "<div><b>Cân và phân loại</b> cùng nông dân, rồi chuyển phần tiền còn lại trong " + ts.thanhToanTrongGio + " giờ.</div></div>") +
+      muc("coc", "5. Cọc",
+        "<p class='nho'>Người mua đặt cọc " + ts.cocTheoHang.uytin + "% đến " + ts.cocTheoHang.moi + "% giá trị đơn tùy uy tín. Tiền nằm ở tài khoản đảm bảo, không bên nào tự rút. Xong việc thì cọc trừ vào tiền hàng. Bỏ đơn không lý do thì mất cọc theo giai đoạn. Chi tiết ở trang <a href=\"#/quy-che\">Quy chế</a>; tiêu chuẩn phân loại ở trang <a href=\"#/tieu-chuan\">Tiêu chuẩn</a>.</p>");
+  }
   var vaiChon = "nd";
   function trangDangNhap() {
     var tk = { nd: S().nongDan.map(function (n) { return [n.id, n.ten + " · " + M.vung(n.vung).ten + (n.thanhVienHTX ? " · thành viên HTX" : " · ngoài HTX")]; }), nm: S().nguoiMua.map(function (n) { return [n.id, n.ten + " · " + n.loai]; }), htx: [["HTX01", D.htx.ten]] };
@@ -163,7 +208,7 @@
       var lua = S().luaCam.filter(function (l) { return l.nongDan === p.id && l.trangThai === "dang_ban"; });
       var chon = lua.filter(function (l) { return l.id === q.lua; })[0] || lua[0];
       if (!lua.length) return h + '<div class="the">Bạn cần <a href="#/nd/vuon">khai lứa cam</a> trước khi nhận đơn.</div>';
-      var toiDa = M.kgGiaoDuoc(d, chon), kg = Math.max(0, Math.min(con, toiDa)), t = M.tinhTien(d, M.tyLeConLai(chon), kg);
+      var toiDa = M.kgGiaoDuoc(d, chon), kg = Math.max(0, Math.min(con, toiDa)), t = M.tinhTien(d, M.tyLeConLai(chon), kg, null, false, p.id);
       var tenLoai = d.loaiCan.map(function (l) { return M.TEN_LOAI[l]; }).join(" + ");
       var nd = M.nongDan(p.id);
       h += '<div class="the"><h3>Nhận đơn này</h3><label>Lứa cam</label><select id="lua">' + lua.map(function (l) { return '<option value="' + l.id + '"' + (l === chon ? " selected" : "") + ">" + esc(l.ten) + " · " + f.kg(l.kg) + " · chín " + f.ngay(l.ngayChin) + "</option>"; }).join("") + "</select>" +
@@ -181,7 +226,11 @@
   }
   function ndVuon() {
     var p = phien(), ds = S().luaCam.filter(function (l) { return l.nongDan === p.id; });
-    return "<h1>Vườn và lứa cam</h1>" + ds.map(function (l) { return '<div class="the"><b>' + esc(l.ten) + '</b> <span class="nhan ' + (l.trangThai === "dang_ban" ? "" : "xam") + '">' + (l.trangThai === "dang_ban" ? "Đang bán" : "Đã bán") + "</span><div>" + f.kg(l.kg) + " · chín " + f.ngayDu(l.ngayChin) + '</div><div class="nho">Ước tỷ lệ: loại 1 ' + (l.tyLe.loai1 || 0) + "%, loại 2 " + (l.tyLe.loai2 || 0) + "%, dạt " + (l.tyLe.dat || 0) + '%</div><div class="nho">' + (function (c) { return "Còn chưa có người mua: loại 1 " + f.kg(c.loai1) + ", loại 2 " + f.kg(c.loai2) + ", dạt " + f.kg(c.dat); })(M.conLaiTheoLoai(l)) + "</div></div>"; }).join("") +
+    return "<h1>Vườn và lứa cam</h1>" + ds.map(function (l) { return '<div class="the"><b>' + esc(l.ten) + '</b> <span class="nhan ' + (l.trangThai === "dang_ban" ? "" : "xam") + '">' + (l.trangThai === "dang_ban" ? "Đang bán" : "Đã bán") + "</span><div>" + f.kg(l.kg) + " · chín " + f.ngayDu(l.ngayChin) + '</div><div class="nho">Ước tỷ lệ: loại 1 ' + (l.tyLe.loai1 || 0) + "%, loại 2 " + (l.tyLe.loai2 || 0) + "%, dạt " + (l.tyLe.dat || 0) + '%</div><div class="nho">' + (function (c) { return "Còn chưa có người mua: loại 1 " + f.kg(c.loai1) + ", loại 2 " + f.kg(c.loai2) + ", dạt " + f.kg(c.dat); })(M.conLaiTheoLoai(l)) + "</div>" +
+        '<details style="margin-top:8px"><summary><b>Cập nhật lứa này</b></summary><div class="hang2"><div><label>Sản lượng (kg)</label><input id="sk-' + l.id + '" type="number" value="' + l.kg + '"></div><div><label>Ngày chín</label><input id="sn-' + l.id + '" type="date" value="' + l.ngayChin + '"></div></div>' +
+        '<div class="hang2" style="grid-template-columns:1fr 1fr 1fr"><div><label>% Loại 1</label><input id="s1-' + l.id + '" type="number" value="' + (l.tyLe.loai1 || 0) + '"></div><div><label>% Loại 2</label><input id="s2-' + l.id + '" type="number" value="' + (l.tyLe.loai2 || 0) + '"></div><div><label>% Dạt</label><input id="s3-' + l.id + '" type="number" value="' + (l.tyLe.dat || 0) + '"></div></div>' +
+        '<p class="nho">Cập nhật khi đo lại bằng thẻ đo cỡ hoặc khi sản lượng thay đổi. Hợp đồng đã ký giữ nguyên; số mới dùng cho các đơn nhận sau.</p><button class="nut phu full" data-sualua="' + l.id + '">Lưu thay đổi</button></details></div>'; }).join("") +
+      (function () { var cp = M.chiPhiNd(p.id); return '<div class="the"><h3>Chi phí của tôi</h3><p class="nho">Dùng để tính tiền về tay khi đơn ghi "nông dân lo" công hái hoặc xe. ' + (cp.rieng ? "Đang dùng mức bạn tự khai." : "Bạn chưa khai, web đang dùng mức chung của HTX.") + '</p><div class="hang2"><div><label>Công hái (đ/kg)</label><input id="cpch" type="number" step="50" value="' + cp.congHai + '"></div><div><label>Xe chở (đ/kg)</label><input id="cpxe" type="number" step="50" value="' + cp.xe + '"></div></div><button class="nut phu full" id="luuCP" style="margin-top:10px">Lưu chi phí</button></div>'; })() +
       '<div class="the"><h3>Khai lứa cam mới</h3><label>Tên lứa</label><input id="lten" value="Lứa mới"><div class="hang2"><div><label>Sản lượng (kg)</label><input id="lkg" type="number" value="2000"></div><div><label>Ngày chín</label><input id="lngay" type="date" value="' + M.congNgay(D.homNay, 10) + '"></div></div>' +
       '<div class="hang2" style="grid-template-columns:1fr 1fr 1fr"><div><label>% Loại 1</label><input id="l1" type="number" value="50"></div><div><label>% Loại 2</label><input id="l2" type="number" value="35"></div><div><label>% Dạt</label><input id="l3" type="number" value="15"></div></div>' +
       '<p class="nho">Không biết tỷ lệ? Dùng thẻ đo cỡ của HTX đo thử 50 trái ngẫu nhiên.</p><button class="nut full" id="themLua">Lưu lứa cam</button></div>';
@@ -228,7 +277,7 @@
     if (hd.trangThai === "da_chot" && vai === "nd" && !hd.daHai) a += '<button class="nut" data-act="batDauHai">Báo đã bắt đầu hái</button>';
     if (hd.trangThai === "da_chot" && (vai === "nm" || vai === "nd")) a += '<button class="nut cam" data-act="moBienBan">Lập biên bản cân và phân loại</button>';
     if (hd.trangThai === "da_can") {
-      var tt = M.tinhTien(d, hd.bienBan.tyLe, hd.bienBan.tong, hd.gia, true), conLai = tt.giaTri - hd.coc.tien;
+      var tt = M.tinhTien(d, hd.bienBan.tyLe, hd.bienBan.tong, hd.gia, true, hd.nongDan), conLai = tt.giaTri - hd.coc.tien;
       h += bangTien(tt, "Tiền hàng theo biên bản cân", true) + '<div class="the"><div class="dong"><span>Giá trị hàng</span><b>' + f.vnd(tt.giaTri) + '</b></div><div class="dong"><span>Trừ cọc đã giữ</span><b>−' + f.vnd(hd.coc.tien) + '</b></div><div class="dong tong"><span>Người mua chuyển thêm trong ' + S().thamSo.thanhToanTrongGio + " giờ</span><span>" + f.vnd(conLai) + "</span></div></div>";
       if (vai === "nm") a += '<button class="nut" data-act="thanhToan">Đã chuyển ' + f.vnd(conLai) + "</button>";
       if (vai === "nm" || vai === "nd") a += '<button class="nut phu" data-act="giamDinh">Không đồng ý phân loại, gọi HTX giám định</button>';
@@ -343,6 +392,7 @@
     else if (seg[0] === "cau-chuyen") html = trangCauChuyen();
     else if (seg[0] === "tieu-chuan") html = trangTieuChuan();
     else if (seg[0] === "quy-che") html = trangQuyChe();
+    else if (seg[0] === "huong-dan") html = trangHuongDan();
     else if (seg[0] === "dang-nhap") html = trangDangNhap();
     else if (seg[0] === "don") html = chiTietDon(seg[1], q);
     else if (seg[0] === "hd") { if (!p) { di("#/dang-nhap"); return; } html = chiTietHD(seg[1]); }
@@ -351,6 +401,7 @@
     else if (seg[0] === "htx") { if (!can("htx")) return; html = !seg[1] ? htxHome() : seg[1] === "gia" ? htxGia() : seg[1] === "giam-sat" ? htxGiamSat() : seg[1] === "cau" ? htxCau() : htxTrinhDien(); }
     if (html == null) html = trangChu();
     khung(html, hash); ganSuKien(seg, q);
+    if (q.muc && $("#" + q.muc)) $("#" + q.muc).scrollIntoView();
   }
 
   function ganSuKien(seg, q) {
@@ -363,7 +414,7 @@
     if (seg[0] === "don") on("#lua", "onchange", function () { di("#/don/" + seg[1] + "?lua=" + $("#lua").value); });
     if (seg[0] === "don" && $("#nhan")) {
       var d = M.donMua(seg[1]);
-      var capNhat = function () { var l = M.luaCam($("#lua").value), kg = Math.max(0, +$("#kg").value || 0); $("#tien").innerHTML = bangTien(M.tinhTien(d, M.tyLeConLai(l), kg)); };
+      var capNhat = function () { var l = M.luaCam($("#lua").value), kg = Math.max(0, +$("#kg").value || 0); $("#tien").innerHTML = bangTien(M.tinhTien(d, M.tyLeConLai(l), kg, null, false, phien().id)); };
       $("#kg").oninput = capNhat;
       $("#nhan").onclick = function () {
         var kg = +$("#kg").value, con = d.kg - M.daNhan(d), l = M.luaCam($("#lua").value);
@@ -403,6 +454,14 @@
       });
     }
     // Vườn
+    document.querySelectorAll("[data-sualua]").forEach(function (bt) { bt.onclick = function () {
+      var id = bt.dataset.sualua, l = M.luaCam(id), t = { loai1: +$("#s1-" + id).value, loai2: +$("#s2-" + id).value, dat: +$("#s3-" + id).value }, kg = +$("#sk-" + id).value;
+      if (t.loai1 + t.loai2 + t.dat !== 100) return toast("Tổng tỷ lệ phải bằng 100%");
+      var daKy = S().hopDong.filter(function (h) { return h.lua === id && h.trangThai !== "da_huy"; }).reduce(function (a, h) { return a + h.kg; }, 0);
+      if (!kg || kg < daKy) return toast("Sản lượng không được thấp hơn " + f.kg(daKy) + " đã ký bán");
+      l.kg = kg; l.ngayChin = $("#sn-" + id).value || l.ngayChin; l.tyLe = t; M.luu(); toast("Đã cập nhật lứa cam. Tiền về tay ở các đơn được tính lại."); route();
+    }; });
+    on("#luuCP", "onclick", function () { var ch = +$("#cpch").value, xe = +$("#cpxe").value; if (ch < 0 || xe < 0) return toast("Chi phí không được âm"); M.nongDan(phien().id).chiPhi = { congHai: ch, xe: xe }; M.luu(); toast("Đã lưu chi phí của bạn"); route(); });
     on("#themLua", "onclick", function () {
       var t = { loai1: +$("#l1").value, loai2: +$("#l2").value, dat: +$("#l3").value }; if (t.loai1 + t.loai2 + t.dat !== 100) return toast("Tổng tỷ lệ phải bằng 100%");
       S().luaCam.push({ id: "L" + (S().luaCam.length + 10), nongDan: phien().id, ten: $("#lten").value || "Lứa mới", kg: +$("#lkg").value, ngayChin: $("#lngay").value, tyLe: t, trangThai: "dang_ban" }); M.luu(); toast("Đã lưu lứa cam. Người mua sẽ thấy trong nguồn hàng."); route();
