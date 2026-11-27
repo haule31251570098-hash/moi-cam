@@ -3,6 +3,7 @@
   var M = window.MC, D = M.D, f = M.fmt, $ = function (s) { return document.querySelector(s); };
   var esc = function (s) { return String(s == null ? "" : s).replace(/[&<>"]/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]; }); };
   var S = function () { return M.S; };
+  var so = function (n) { return Number(n).toLocaleString("vi-VN", { maximumFractionDigits: 1 }); };
   function toast(t) { var e = document.createElement("div"); e.className = "toast"; e.textContent = t; document.body.appendChild(e); setTimeout(function () { e.remove(); }, 2800); }
   function nhan(tt) { var x = M.TRANG_THAI[tt] || [tt, "xam"]; return '<span class="nhan ' + x[1] + '">' + x[0] + "</span>"; }
   function di(h) { location.hash = h; }
@@ -41,22 +42,23 @@
     if (d.giaDat) gia.push("Dạt " + d.giaDat.toLocaleString("vi-VN"));
     return '<a class="the" style="display:block;text-decoration:none;color:inherit" href="#/don/' + d.id + '">' +
       '<div style="display:flex;justify-content:space-between;gap:8px;align-items:start"><div><b>' + esc(nm.ten) + '</b> <span class="nhan ' + (nm.xacMinh ? "" : "cam") + '">' + esc(nm.loai) + (nm.xacMinh ? " · đã xác minh" : " · chưa xác minh") + "</span></div>" +
-      '<span class="nhan ' + (d.cheDoGia === "codinh" ? "xam" : "cam") + '">' + (d.cheDoGia === "codinh" ? "Giá chốt cứng" : "Giá theo biên độ ±" + M.bienDo(d.vung, d.ngayCat, T).b + "%") + "</span></div>" +
+      '<span class="nhan ' + (d.cheDoGia === "codinh" ? "xam" : "cam") + '">' + (d.cheDoGia === "codinh" ? "Giá chốt cứng" : "Giá theo biên độ ±" + so(M.bienDo(d.vung, d.ngayCat, T).b) + "%") + "</span></div>" +
       '<div style="margin-top:6px">Cần <b>' + f.kg(d.kg) + "</b> (dung sai ±" + d.dungSai + "%) · còn nhận " + f.kg(con) + " · cắt ngày <b>" + f.ngay(d.ngayCat) + "</b> · " + M.vung(d.vung).ten + "</div>" +
-      '<div class="nho">' + gia.join(" · ") + " đ/kg · " + (d.congHai === "nguoimua" ? "người mua lo công hái" : "nông dân lo công hái") + (d.nhanGom ? " · nhận gom nhiều vườn" : "") + "</div></a>";
+      '<div class="nho">' + (M.laMuaXo(d) ? "Mua xô cả vườn · " : "Chỉ mua " + d.loaiCan.map(function (l) { return M.TEN_LOAI[l]; }).join(" + ") + " · ") + gia.join(" · ") + " đ/kg · " + (d.congHai === "nguoimua" ? "người mua lo công hái" : "nông dân lo công hái") + (d.nhanGom ? " · nhận gom nhiều vườn" : "") + "</div></a>";
   }
-  function bangTien(t, tieuDe) {
+  function bangTien(t, tieuDe, thucTe) {
     return '<div class="the xanh"><h3>' + (tieuDe || "Ước tính tiền về tay") + "</h3>" +
       t.dong.map(function (x) { return '<div class="dong"><span>' + M.TEN_LOAI[x.l] + " " + f.kg(x.kg) + " × " + x.gia.toLocaleString("vi-VN") + "</span><b>" + f.vnd(x.tien) + "</b></div>"; }).join("") +
       t.tru.map(function (x) { return '<div class="dong"><span>Trừ ' + x[0] + "</span><b>−" + f.vnd(x[1]) + "</b></div>"; }).join("") +
-      (t.kgKhongMua ? '<div class="dong nho"><span>Không thuộc đơn này (bán đơn khác)</span><span>' + f.kg(t.kgKhongMua) + "</span></div>" : "") +
-      '<div class="dong tong"><span>Còn lại</span><span>' + f.vnd(t.tong) + "</span></div></div>";
+      (t.kgKhongMua ? '<div class="dong nho"><span>' + (thucTe ? "Không tính tiền (trái bỏ hoặc không đúng loại đơn mua)" : "Trái dạt vượt mức đơn nhận (bán cho đơn khác)") + "</span><span>" + f.kg(t.kgKhongMua) + "</span></div>" : "") +
+      '<div class="dong tong"><span>' + (thucTe ? "Nông dân thực nhận" : "Tiền về tay") + "</span><span>" + f.vnd(t.tong) + "</span></div>" +
+      '<p class="nho" style="margin:8px 0 0">' + (thucTe ? "Tính theo biên bản cân và phân loại tại vườn." : "Tiền về tay = tiền bán từng loại trái trừ chi phí bạn phải lo (công hái, xe). Đây là số ước tính theo tỷ lệ loại bạn khai; số tiền thật tính theo biên bản cân tại vườn. Cọc là tiền của người mua, không trừ vào phần của bạn.") + "</p></div>";
   }
   function giaiThichBienDo(bd, vId) {
     var ts = S().thamSo;
-    return '<div class="the"><h3>Biên độ ±' + bd.b + "% được tính ra sao</h3>" +
+    return '<div class="the"><h3>Biên độ ±' + so(bd.b) + "% được tính ra sao</h3>" +
       '<div class="cong-thuc">B = phân vị ' + ts.phanVi + " của |Δ giá trong " + bd.T + " ngày|<br>dữ liệu: " + esc(bd.cap) + ", " + bd.tenMua + ", " + ts.cuaSoNam + " năm gần nhất</div>" +
-      '<p class="nho">' + bd.n + " lần quan sát. Trong quá khứ, cứ 10 lần thì khoảng " + Math.round(ts.phanVi / 10) + " lần giá chỉ lệch trong " + bd.tho.toFixed(1) + "% sau " + bd.T + " ngày. Làm tròn " + ts.lamTron + "%, giới hạn " + ts.bienDoMin + "% đến " + ts.bienDoMax + "%" + (bd.biKep ? " (đã bị giới hạn)" : "") + ". Lệch trung bình: " + bd.trungBinh.toFixed(1) + "%.</p>" +
+      '<p class="nho">' + bd.n + " lần quan sát. Trong quá khứ, cứ 10 lần thì khoảng " + Math.round(ts.phanVi / 10) + " lần giá chỉ lệch trong " + so(bd.tho) + "% sau " + bd.T + " ngày. Làm tròn " + ts.lamTron + "%, giới hạn " + ts.bienDoMin + "% đến " + ts.bienDoMax + "%" + (bd.biKep ? " (đã bị giới hạn)" : "") + ". Lệch trung bình: " + so(bd.trungBinh) + "%.</p>" +
       '<p class="nho">Ý nghĩa: giá chung dao động trong mức này thì cả hai bên giữ giá đã chốt. Vượt mức này trước xác nhận lần 2 thì bên bị thiệt được đề nghị giá mới hoặc rút không phạt.</p></div>';
   }
 
@@ -108,7 +110,7 @@
       '<div class="dong"><span>Nông dân ngoài HTX</span><b>' + ts.cocNongDanNgoaiHTX + '%</b></div><div class="dong"><span>Nông dân thành viên HTX</span><b>HTX bảo lãnh</b></div></div>' +
       "<h2>Biên độ giá tính thế nào</h2><div class='the'><div class='cong-thuc'>B(vùng, mùa, T) = phân vị " + ts.phanVi + " của |P(t+T) − P(t)| / P(t)</div>" +
       '<p class="nho">P là giá tham chiếu loại 1 HTX công bố mỗi ngày (trung vị ít nhất 3 báo giá). T là số ngày từ lúc ký tới ngày cắt. Chỉ dùng dữ liệu cùng vùng, cùng mùa, ' + ts.cuaSoNam + " năm gần nhất. Vùng mới chưa đủ " + ts.quanSatToiThieu + " quan sát thì mượn dữ liệu cấp tỉnh. Kết quả làm tròn " + ts.lamTron + "% và giữ trong khoảng " + ts.bienDoMin + "% đến " + ts.bienDoMax + "%. Đơn cắt trong " + ts.ngayGiaCoDinhToiDa + " ngày thì chốt giá cứng, không dùng biên độ.</p>" +
-      '<div class="cuon"><table><tr><th>Vùng</th><th>Đơn 3 ngày</th><th>Đơn 7 ngày</th><th>Đơn 14 ngày</th></tr>' + D.vung.map(function (v) { return "<tr><td>" + v.ten + "</td>" + [3, 7, 14].map(function (T) { return "<td>±" + M.bienDo(v.id, M.congNgay(D.homNay, T), T).b + "%</td>"; }).join("") + "</tr>"; }).join("") + "</table></div></div>" +
+      '<div class="cuon"><table><tr><th>Vùng</th><th>Đơn 3 ngày</th><th>Đơn 7 ngày</th><th>Đơn 14 ngày</th></tr>' + D.vung.map(function (v) { return "<tr><td>" + v.ten + "</td>" + [3, 7, 14].map(function (T) { return "<td>±" + so(M.bienDo(v.id, M.congNgay(D.homNay, T), T).b) + "%</td>"; }).join("") + "</tr>"; }).join("") + "</table></div></div>" +
       '<div class="the xanh"><h3>Căn cứ pháp lý chính</h3><p class="nho">Bộ luật Dân sự 2015: hợp đồng mua bán tài sản, đặt cọc (Điều 328: bên đặt cọc từ chối thì mất cọc, bên nhận cọc từ chối thì trả cọc và một khoản tương đương, trừ khi có thỏa thuận khác; quy chế sàn là thỏa thuận khác có mức phạt theo giai đoạn), phạt vi phạm và bồi thường, sự kiện bất khả kháng. Luật Giao dịch điện tử 2023: hợp đồng điện tử có giá trị như văn bản. Luật Hợp tác xã 2023: HTX cung cấp dịch vụ cho thành viên. Giữ hộ tiền là dịch vụ trung gian thanh toán, phải do ngân hàng hoặc tổ chức được cấp phép thực hiện, hoặc HTX giữ như bên nhận cọc; trang web chỉ hiển thị trạng thái.</p></div>';
   }
   var vaiChon = "nd";
@@ -130,8 +132,8 @@
     h += "<h2>Người mua hợp lứa cam của bạn</h2>";
     lua.forEach(function (l) {
       var g = M.ghepChoLua(l);
-      h += '<div class="the"><b>' + esc(l.ten) + "</b> · " + f.kg(l.kg) + " · chín " + f.ngay(l.ngayChin) + '<div class="nho">Có ' + g.length + " người mua phù hợp. Xếp theo tiền về tay và độ khớp ngày.</div></div>" +
-        g.slice(0, 3).map(function (x) { return '<a class="the" style="display:block;text-decoration:none;color:inherit;margin-left:10px" href="#/don/' + x.don.id + "?lua=" + l.id + '"><b>' + esc(M.nguoiMua(x.don.nguoiMua).ten) + '</b> <span class="nhan">' + esc(M.nguoiMua(x.don.nguoiMua).loai) + "</span><div>Nhận " + f.kg(x.kg) + " · cắt " + f.ngay(x.don.ngayCat) + (x.lechNgay ? " (lệch " + x.lechNgay + " ngày)" : " (khớp ngày)") + '</div><div class="so" style="font-size:1.2rem">≈ ' + f.tr(x.tien.tong) + ' về tay</div></a>'; }).join("");
+      h += '<div class="the"><b>' + esc(l.ten) + "</b> · " + f.kg(l.kg) + " · chín " + f.ngay(l.ngayChin) + '<div class="nho">Còn ' + f.kg(M.tongConLai(l)) + " chưa có người mua. Có " + g.length + " người mua phù hợp. Xếp theo tiền về tay và độ khớp ngày.</div></div>" +
+        g.slice(0, 3).map(function (x) { return '<a class="the" style="display:block;text-decoration:none;color:inherit;margin-left:10px" href="#/don/' + x.don.id + "?lua=" + l.id + '"><b>' + esc(M.nguoiMua(x.don.nguoiMua).ten) + '</b> <span class="nhan">' + esc(M.nguoiMua(x.don.nguoiMua).loai) + "</span><div>" + (M.laMuaXo(x.don) ? "Mua xô " : "Lấy " + x.don.loaiCan.map(function (l) { return M.TEN_LOAI[l]; }).join(" + ") + " ") + f.kg(x.kg) + " · cắt " + f.ngay(x.don.ngayCat) + (x.lechNgay ? " (lệch " + x.lechNgay + " ngày)" : " (khớp ngày)") + '</div><div class="so" style="font-size:1.2rem">≈ ' + f.tr(x.tien.tong) + ' về tay</div></a>'; }).join("");
     });
     if (!lua.length) h += '<div class="the">Chưa có lứa cam nào đang bán. <a href="#/nd/vuon">Khai lứa cam</a></div>';
     return h;
@@ -153,20 +155,23 @@
       '<div class="the"><h3>Cam kết của đơn</h3>' +
       [["Sản lượng", f.kg(d.kg) + " (dung sai ±" + d.dungSai + "%) · còn nhận " + f.kg(con)], ["Ngày cắt", f.ngayDu(d.ngayCat) + " · xác nhận lần 2 trước " + S().thamSo.gioXacNhan2 + " giờ"], ["Loại mua", d.loaiCan.map(function (l) { return M.TEN_LOAI[l]; }).join(", ") + (d.tyLeDatToiDa && d.loaiCan.indexOf("dat") < 0 ? " · nhận dạt tối đa " + d.tyLeDatToiDa + "%" : "")],
        ["Giá", d.loaiCan.filter(function (l) { return l !== "dat"; }).map(function (l) { return M.TEN_LOAI[l] + " " + d.gia[l].toLocaleString("vi-VN"); }).concat(d.giaDat ? ["Dạt " + d.giaDat.toLocaleString("vi-VN")] : []).join(" · ") + " đ/kg"],
-       ["Cách giữ giá", d.cheDoGia === "codinh" ? "Chốt giá cứng (đơn ngắn ngày)" : "Theo biên độ ±" + bd.b + "% quanh giá tham chiếu"], ["Công hái", d.congHai === "nguoimua" ? "Người mua lo" : "Nông dân lo"], ["Xe chở", d.xe === "nguoimua" ? "Người mua lo" : "Nông dân lo"],
+       ["Cách giữ giá", d.cheDoGia === "codinh" ? "Chốt giá cứng (đơn ngắn ngày)" : "Theo biên độ ±" + so(bd.b) + "% quanh giá tham chiếu"], ["Công hái", d.congHai === "nguoimua" ? "Người mua lo" : "Nông dân lo"], ["Xe chở", d.xe === "nguoimua" ? "Người mua lo" : "Nông dân lo"],
        ["Cọc người mua", M.phanTramCoc(d.nguoiMua) + "% giá trị, giữ ở tài khoản đảm bảo"], ["Phân loại", "Theo tiêu chuẩn HTX, thẻ đo cỡ chung"]].map(function (r) { return '<div class="dong"><span class="nho">' + r[0] + "</span><span style='text-align:right'>" + r[1] + "</span></div>"; }).join("") +
       '<p class="nho">' + esc(d.ghiChu) + "</p></div>";
     if (bd) h += giaiThichBienDo(bd, d.vung);
     if (p && p.vai === "nd") {
       var lua = S().luaCam.filter(function (l) { return l.nongDan === p.id && l.trangThai === "dang_ban"; });
-      var chon = M.luaCam(q.lua) || lua[0];
+      var chon = lua.filter(function (l) { return l.id === q.lua; })[0] || lua[0];
       if (!lua.length) return h + '<div class="the">Bạn cần <a href="#/nd/vuon">khai lứa cam</a> trước khi nhận đơn.</div>';
-      var kg = Math.min(con, chon.kg), t = M.tinhTien(d, chon.tyLe, kg);
+      var toiDa = M.kgGiaoDuoc(d, chon), kg = Math.max(0, Math.min(con, toiDa)), t = M.tinhTien(d, M.tyLeConLai(chon), kg);
+      var tenLoai = d.loaiCan.map(function (l) { return M.TEN_LOAI[l]; }).join(" + ");
       var nd = M.nongDan(p.id);
       h += '<div class="the"><h3>Nhận đơn này</h3><label>Lứa cam</label><select id="lua">' + lua.map(function (l) { return '<option value="' + l.id + '"' + (l === chon ? " selected" : "") + ">" + esc(l.ten) + " · " + f.kg(l.kg) + " · chín " + f.ngay(l.ngayChin) + "</option>"; }).join("") + "</select>" +
-        '<label>Số kg nhận</label><input id="kg" type="number" min="100" step="100" max="' + con + '" value="' + kg + '"></div>' + '<div id="tien">' + bangTien(t) + "</div>" +
+        (toiDa <= 0 ? '<p class="nho">Lứa này không còn trái thuộc loại đơn cần (' + tenLoai + '). Chọn lứa khác hoặc tìm đơn khác.</p></div>' :
+        '<label>' + (M.laMuaXo(d) ? "Số kg giao (mua xô, tính cả trái các loại)" : "Số kg " + tenLoai + " giao") + '</label><input id="kg" type="number" min="50" step="50" max="' + kg + '" value="' + kg + '">' +
+        '<p class="nho">Lứa này còn khoảng ' + f.kg(toiDa) + (M.laMuaXo(d) ? " chưa có người mua." : " trái thuộc loại đơn cần. Trái loại khác bạn bán cho đơn khác.") + "</p></div>" + '<div id="tien">' + bangTien(t) + "</div>" +
         '<div class="the ' + (nd.thanhVienHTX ? "xanh" : "cam") + '"><p class="nho" style="margin:0">' + (nd.thanhVienHTX ? "Bạn là thành viên HTX nên không phải đặt cọc. HTX bảo lãnh nghĩa vụ giao hàng của bạn." : "Bạn chưa là thành viên HTX nên đặt cọc cam kết " + S().thamSo.cocNongDanNgoaiHTX + "% giá trị, hoàn lại khi giao xong.") + " Nếu người mua bỏ đơn không lý do, bạn nhận khoản bồi thường từ cọc của họ.</p></div>" +
-        '<button class="nut cam full" id="nhan">Nhận đơn và ký hợp đồng điện tử</button>';
+        '<button class="nut cam full" id="nhan">Nhận đơn và ký hợp đồng điện tử</button>');
     } else if (!p) h += '<a class="nut full" href="#/dang-nhap">Đăng nhập để nhận đơn</a>';
     return h;
   }
@@ -176,7 +181,7 @@
   }
   function ndVuon() {
     var p = phien(), ds = S().luaCam.filter(function (l) { return l.nongDan === p.id; });
-    return "<h1>Vườn và lứa cam</h1>" + ds.map(function (l) { return '<div class="the"><b>' + esc(l.ten) + '</b> <span class="nhan ' + (l.trangThai === "dang_ban" ? "" : "xam") + '">' + (l.trangThai === "dang_ban" ? "Đang bán" : "Đã bán") + "</span><div>" + f.kg(l.kg) + " · chín " + f.ngayDu(l.ngayChin) + '</div><div class="nho">Ước tỷ lệ: loại 1 ' + (l.tyLe.loai1 || 0) + "%, loại 2 " + (l.tyLe.loai2 || 0) + "%, dạt " + (l.tyLe.dat || 0) + "%</div></div>"; }).join("") +
+    return "<h1>Vườn và lứa cam</h1>" + ds.map(function (l) { return '<div class="the"><b>' + esc(l.ten) + '</b> <span class="nhan ' + (l.trangThai === "dang_ban" ? "" : "xam") + '">' + (l.trangThai === "dang_ban" ? "Đang bán" : "Đã bán") + "</span><div>" + f.kg(l.kg) + " · chín " + f.ngayDu(l.ngayChin) + '</div><div class="nho">Ước tỷ lệ: loại 1 ' + (l.tyLe.loai1 || 0) + "%, loại 2 " + (l.tyLe.loai2 || 0) + "%, dạt " + (l.tyLe.dat || 0) + '%</div><div class="nho">' + (function (c) { return "Còn chưa có người mua: loại 1 " + f.kg(c.loai1) + ", loại 2 " + f.kg(c.loai2) + ", dạt " + f.kg(c.dat); })(M.conLaiTheoLoai(l)) + "</div></div>"; }).join("") +
       '<div class="the"><h3>Khai lứa cam mới</h3><label>Tên lứa</label><input id="lten" value="Lứa mới"><div class="hang2"><div><label>Sản lượng (kg)</label><input id="lkg" type="number" value="2000"></div><div><label>Ngày chín</label><input id="lngay" type="date" value="' + M.congNgay(D.homNay, 10) + '"></div></div>' +
       '<div class="hang2" style="grid-template-columns:1fr 1fr 1fr"><div><label>% Loại 1</label><input id="l1" type="number" value="50"></div><div><label>% Loại 2</label><input id="l2" type="number" value="35"></div><div><label>% Dạt</label><input id="l3" type="number" value="15"></div></div>' +
       '<p class="nho">Không biết tỷ lệ? Dùng thẻ đo cỡ của HTX đo thử 50 trái ngẫu nhiên.</p><button class="nut full" id="themLua">Lưu lứa cam</button></div>';
@@ -199,7 +204,7 @@
       if (tg.coDinh) h += '<div class="the xanh">Đơn chốt giá cứng. Giá không đổi dù thị trường biến động.</div>';
       else {
         var w = Math.min(100, Math.abs(tg.lech) / hd.bienDo * 50);
-        h += '<div class="the ' + (tg.trong ? "xanh" : "cam") + '"><h3>Giá chung so với lúc ký</h3><div>Tham chiếu lúc ký ' + hd.giaThamChieuLucKy.toLocaleString("vi-VN") + " → hôm nay " + tg.ref.toLocaleString("vi-VN") + " đ/kg (<b>" + f.pt(tg.lech) + "</b>). Biên độ ±" + hd.bienDo + "%.</div>" +
+        h += '<div class="the ' + (tg.trong ? "xanh" : "cam") + '"><h3>Giá chung so với lúc ký</h3><div>Tham chiếu lúc ký ' + hd.giaThamChieuLucKy.toLocaleString("vi-VN") + " → hôm nay " + tg.ref.toLocaleString("vi-VN") + " đ/kg (<b>" + f.pt(tg.lech) + "</b>). Biên độ ±" + so(hd.bienDo) + "%.</div>" +
           '<div class="thanh" style="margin:10px 0"><i style="left:' + (tg.lech < 0 ? 50 - w : 50) + "%;width:" + w + '%;background:' + (tg.trong ? "var(--xanh2)" : "var(--cam)") + '"></i></div>' +
           '<p class="nho" style="margin:0">' + (tg.trong ? "Trong biên độ: hai bên giữ đúng giá đã ký." : (truoc ? "Vượt biên độ. " + (tg.benBatLoi === "nguoimua" ? "Người mua" : "Nông dân") + " được đề nghị giá mới; bên kia đồng ý hoặc hủy không phạt, cọc hoàn trả." : "Vượt biên độ nhưng đã qua xác nhận lần 2, hai bên đã khóa giá.")) + "</p>";
         if (!tg.trong && truoc && !hd.deNghi && vai === (tg.benBatLoi === "nguoimua" ? "nm" : "nd")) {
@@ -223,8 +228,8 @@
     if (hd.trangThai === "da_chot" && vai === "nd" && !hd.daHai) a += '<button class="nut" data-act="batDauHai">Báo đã bắt đầu hái</button>';
     if (hd.trangThai === "da_chot" && (vai === "nm" || vai === "nd")) a += '<button class="nut cam" data-act="moBienBan">Lập biên bản cân và phân loại</button>';
     if (hd.trangThai === "da_can") {
-      var tt = M.tinhTien(d, hd.bienBan.tyLe, hd.bienBan.tong, hd.gia), conLai = tt.giaTri - hd.coc.tien;
-      h += bangTien(tt, "Tiền hàng theo biên bản cân") + '<div class="the"><div class="dong"><span>Giá trị hàng</span><b>' + f.vnd(tt.giaTri) + '</b></div><div class="dong"><span>Trừ cọc đã giữ</span><b>−' + f.vnd(hd.coc.tien) + '</b></div><div class="dong tong"><span>Người mua chuyển thêm trong ' + S().thamSo.thanhToanTrongGio + " giờ</span><span>" + f.vnd(conLai) + "</span></div></div>";
+      var tt = M.tinhTien(d, hd.bienBan.tyLe, hd.bienBan.tong, hd.gia, true), conLai = tt.giaTri - hd.coc.tien;
+      h += bangTien(tt, "Tiền hàng theo biên bản cân", true) + '<div class="the"><div class="dong"><span>Giá trị hàng</span><b>' + f.vnd(tt.giaTri) + '</b></div><div class="dong"><span>Trừ cọc đã giữ</span><b>−' + f.vnd(hd.coc.tien) + '</b></div><div class="dong tong"><span>Người mua chuyển thêm trong ' + S().thamSo.thanhToanTrongGio + " giờ</span><span>" + f.vnd(conLai) + "</span></div></div>";
       if (vai === "nm") a += '<button class="nut" data-act="thanhToan">Đã chuyển ' + f.vnd(conLai) + "</button>";
       if (vai === "nm" || vai === "nd") a += '<button class="nut phu" data-act="giamDinh">Không đồng ý phân loại, gọi HTX giám định</button>';
     }
@@ -242,18 +247,23 @@
     return h;
   }
   function formBienBan(hd) {
+    var d = M.donMua(hd.don), lua = M.luaCam(hd.lua), tl = lua ? lua.tyLe : M.tyLeMacDinh(d), w = {}, mac = {};
+    ["loai1", "loai2", "dat"].forEach(function (l) { w[l] = M.laMuaXo(d) || d.loaiCan.indexOf(l) >= 0 ? (tl[l] || 0) : 0; });
+    var s = (w.loai1 + w.loai2 + w.dat) || 1;
+    ["loai1", "loai2", "dat"].forEach(function (l) { mac[l] = Math.round(w[l] / s * 97); });
+    mac.bo = 100 - mac.loai1 - mac.loai2 - mac.dat;
     return '<div class="the cam"><h3>Biên bản cân và phân loại</h3><p class="nho">Lấy mẫu 3 sọt mỗi tấn, đo bằng thẻ đo cỡ chung, hai bên cùng chứng kiến.</p><label>Tổng kg cân được</label><input id="bbkg" type="number" value="' + hd.kg + '">' +
-      '<div class="hang2" style="grid-template-columns:repeat(4,1fr)"><div><label>% L1</label><input id="b1" type="number" value="52"></div><div><label>% L2</label><input id="b2" type="number" value="31"></div><div><label>% Dạt</label><input id="b3" type="number" value="14"></div><div><label>% Bỏ</label><input id="b4" type="number" value="3"></div></div>' +
+      '<div class="hang2" style="grid-template-columns:repeat(4,1fr)"><div><label>% L1</label><input id="b1" type="number" value="' + mac.loai1 + '"></div><div><label>% L2</label><input id="b2" type="number" value="' + mac.loai2 + '"></div><div><label>% Dạt</label><input id="b3" type="number" value="' + mac.dat + '"></div><div><label>% Bỏ</label><input id="b4" type="number" value="' + mac.bo + '"></div></div>' +
       '<button class="nut full" data-act="luuBienBan" style="margin-top:10px">Lưu biên bản (hai bên ký)</button></div>';
   }
 
   // ---------- Người mua ----------
   function nmHome() {
     var p = phien(), nm = M.nguoiMua(p.id);
-    var lua = S().luaCam.filter(function (l) { return l.trangThai === "dang_ban"; }).sort(function (a, b) { return a.ngayChin < b.ngayChin ? -1 : 1; });
+    var lua = S().luaCam.filter(function (l) { return l.trangThai === "dang_ban" && M.tongConLai(l) > 0; }).sort(function (a, b) { return a.ngayChin < b.ngayChin ? -1 : 1; });
     var don = S().donMua.filter(function (d) { return d.nguoiMua === p.id; });
     return "<h1>Nguồn hàng sắp chín</h1>" + (nm.xacMinh ? "" : '<div class="the cam">Tài khoản chưa được HTX xác minh: cọc ở mức ' + S().thamSo.cocTheoHang.moi + "%. Hoàn tất xác minh để hạ mức cọc.</div>") +
-      '<div class="the cuon"><table><tr><th>Nhà vườn</th><th>Vùng</th><th>Sản lượng</th><th>Chín</th><th>Tỷ lệ L1/L2/Dạt</th></tr>' + lua.map(function (l) { var nd = M.nongDan(l.nongDan); return "<tr><td>" + esc(nd.ten) + (nd.thanhVienHTX ? ' <span class="nhan">HTX</span>' : "") + "<br><span class=nho>" + nd.sao + "★ · giao đúng " + nd.giaoDung + "%</span></td><td>" + M.vung(nd.vung).ten + "</td><td>" + f.kg(l.kg) + "</td><td>" + f.ngay(l.ngayChin) + "</td><td>" + (l.tyLe.loai1 || 0) + "/" + (l.tyLe.loai2 || 0) + "/" + (l.tyLe.dat || 0) + "%</td></tr>"; }).join("") + "</table></div>" +
+      '<div class="the cuon"><table><tr><th>Nhà vườn</th><th>Vùng</th><th>Còn chưa bán</th><th>Chín</th><th>Tỷ lệ L1/L2/Dạt</th></tr>' + lua.map(function (l) { var nd = M.nongDan(l.nongDan); return "<tr><td>" + esc(nd.ten) + (nd.thanhVienHTX ? ' <span class="nhan">HTX</span>' : "") + "<br><span class=nho>" + nd.sao + "★ · giao đúng " + nd.giaoDung + "%</span></td><td>" + M.vung(nd.vung).ten + "</td><td>" + f.kg(M.tongConLai(l)) + "</td><td>" + f.ngay(l.ngayChin) + "</td><td>" + (l.tyLe.loai1 || 0) + "/" + (l.tyLe.loai2 || 0) + "/" + (l.tyLe.dat || 0) + "%</td></tr>"; }).join("") + "</table></div>" +
       '<div class="the xanh"><b>Lợi ích cho người mua:</b> <span class="nho">thấy trước sản lượng và ngày chín, không phải chạy từng vườn dò hàng; hàng phân loại theo một chuẩn chung; chọn chốt giá cứng hay theo biên độ; giá chung đổi mạnh trước xác nhận lần 2 thì được thương lượng hoặc rút không phạt.</span></div>' +
       '<h2>Đơn của bạn</h2>' + (don.map(function (d) { var dn = M.daNhan(d); return '<a class="the" style="display:block;text-decoration:none;color:inherit" href="#/don/' + d.id + '"><b>' + d.id + "</b> · " + f.kg(d.kg) + " · cắt " + f.ngay(d.ngayCat) + '<div class="thanh" style="margin:8px 0"><i style="left:0;width:' + Math.min(100, dn / d.kg * 100) + '%"></i></div><span class="nho">Đã có nông dân nhận ' + f.kg(dn) + "</span></a>"; }).join("") || '<div class="the">Chưa có đơn. <a href="#/nm/dang">Đăng đơn đầu tiên</a></div>');
   }
@@ -277,7 +287,7 @@
     var h = '<div class="the ' + (T <= ts.ngayGiaCoDinhToiDa ? "xanh" : "cam") + '">';
     if (T < 1) h += "Ngày cắt phải sau hôm nay.";
     else if (T <= ts.ngayGiaCoDinhToiDa) h += "<b>Chốt giá cứng</b>: ngày cắt trong " + ts.ngayGiaCoDinhToiDa + " ngày nên giá giữ nguyên tới lúc cân.";
-    else { var bd = M.bienDo(v, ngay, T); h += "<b>Giữ giá theo biên độ ±" + bd.b + "%</b> cho đơn " + T + " ngày ở vùng " + M.vung(v).ten + ', ' + bd.tenMua + '.<div class="nho">Tính từ ' + bd.n + " quan sát lịch sử (" + esc(bd.cap) + "). Giá chung lệch quá mức này trước xác nhận lần 2 thì bạn được đề nghị giá mới hoặc rút không phạt.</div>"; }
+    else { var bd = M.bienDo(v, ngay, T); h += "<b>Giữ giá theo biên độ ±" + so(bd.b) + "%</b> cho đơn " + T + " ngày ở vùng " + M.vung(v).ten + ', ' + bd.tenMua + '.<div class="nho">Tính từ ' + bd.n + " quan sát lịch sử (" + esc(bd.cap) + "). Giá chung lệch quá mức này trước xác nhận lần 2 thì bạn được đề nghị giá mới hoặc rút không phạt.</div>"; }
     h += '<div class="nho" style="margin-top:6px">Giá loại 1 của bạn ' + f.pt(lech) + " so với tham chiếu hôm nay. Cọc ước tính " + pc + "% ≈ " + f.vnd(coc) + ", trừ vào tiền hàng khi thanh toán.</div></div>";
     $("#xemTruoc").innerHTML = h;
   }
@@ -299,7 +309,7 @@
       '<button class="nut full" id="congBo" style="margin-top:10px">Công bố trung vị</button></div>' +
       '<div class="the"><h3>Tham số công thức biên độ</h3><p class="nho">Công khai cho mọi bên. Đổi tham số thì chỉ áp dụng cho đơn ký sau đó.</p><div class="hang2"><div><label>Phân vị (%)</label><input id="tpv" type="number" value="' + ts.phanVi + '"></div><div><label>Cửa sổ (năm)</label><input id="tcs" type="number" value="' + ts.cuaSoNam + '"></div><div><label>Biên độ tối thiểu (%)</label><input id="tmin" type="number" value="' + ts.bienDoMin + '"></div><div><label>Biên độ tối đa (%)</label><input id="tmax" type="number" value="' + ts.bienDoMax + '"></div></div><button class="nut phu full" id="luuTS" style="margin-top:10px">Lưu tham số</button></div>' +
       '<div class="the cuon"><h3>Bảng biên độ hiện hành</h3><table><tr><th>Vùng</th><th>Mùa</th><th>5 ngày</th><th>7 ngày</th><th>10 ngày</th><th>14 ngày</th><th>21 ngày</th></tr>' +
-      D.vung.map(function (v) { return ["nghich", "ro"].map(function (m) { var ngay = m === "ro" ? "2027-06-15" : M.congNgay(D.homNay, 7); return "<tr><td>" + v.ten + "</td><td>" + (m === "ro" ? "Rộ" : "Nghịch") + "</td>" + [5, 7, 10, 14, 21].map(function (T) { var b = M.bienDo(v.id, ngay, T); return "<td>±" + b.b + "%<br><span class=nho>n=" + b.n + "</span></td>"; }).join("") + "</tr>"; }).join(""); }).join("") + "</table></div>";
+      D.vung.map(function (v) { return ["nghich", "ro"].map(function (m) { var ngay = m === "ro" ? "2027-06-15" : M.congNgay(D.homNay, 7); return "<tr><td>" + v.ten + "</td><td>" + (m === "ro" ? "Rộ" : "Nghịch") + "</td>" + [5, 7, 10, 14, 21].map(function (T) { var b = M.bienDo(v.id, ngay, T); return "<td>±" + so(b.b) + "%<br><span class=nho>n=" + b.n + "</span></td>"; }).join("") + "</tr>"; }).join(""); }).join("") + "</table></div>";
   }
   function htxGiamSat() {
     var ts = S().thamSo;
@@ -350,15 +360,16 @@
     on("#vao", "onclick", function () { if ($("#otp").value.trim() !== "2468") return toast("Mã OTP chưa đúng. Bản mẫu dùng 2468."); S().phien = { vai: vaiChon, id: $("#tk").value }; M.luu(); toast("Đăng nhập thành công"); di("#/"); });
     on("#loc", "onchange", function () { di("#/nd/don?loc=" + encodeURIComponent($("#loc").value)); });
     // Nhận đơn
+    if (seg[0] === "don") on("#lua", "onchange", function () { di("#/don/" + seg[1] + "?lua=" + $("#lua").value); });
     if (seg[0] === "don" && $("#nhan")) {
       var d = M.donMua(seg[1]);
-      var capNhat = function () { var l = M.luaCam($("#lua").value), kg = Math.max(0, +$("#kg").value || 0); $("#tien").innerHTML = bangTien(M.tinhTien(d, l.tyLe, kg)); };
-      $("#lua").onchange = function () { di("#/don/" + d.id + "?lua=" + $("#lua").value); }; $("#kg").oninput = capNhat;
+      var capNhat = function () { var l = M.luaCam($("#lua").value), kg = Math.max(0, +$("#kg").value || 0); $("#tien").innerHTML = bangTien(M.tinhTien(d, M.tyLeConLai(l), kg)); };
+      $("#kg").oninput = capNhat;
       $("#nhan").onclick = function () {
         var kg = +$("#kg").value, con = d.kg - M.daNhan(d), l = M.luaCam($("#lua").value);
-        if (!kg || kg < 100) return toast("Nhập số kg từ 100 trở lên");
+        if (!kg || kg < 50) return toast("Nhập số kg từ 50 trở lên");
         if (kg > con) return toast("Đơn chỉ còn nhận " + f.kg(con));
-        if (kg > l.kg) return toast("Lứa cam này chỉ có " + f.kg(l.kg));
+        var toiDaGiao = M.kgGiaoDuoc(d, l); if (kg > toiDaGiao) return toast("Lứa cam này chỉ còn khoảng " + f.kg(toiDaGiao) + " phù hợp đơn này");
         if (!confirm("Ký hợp đồng điện tử bán " + f.kg(kg) + " cho " + M.nguoiMua(d.nguoiMua).ten + "?")) return;
         var hd = M.taoHopDong(d.id, phien().id, kg, l.id); toast("Đã ký " + hd.id + ". Chờ người mua nộp cọc."); di("#/hd/" + hd.id);
       };

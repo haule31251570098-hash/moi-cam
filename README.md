@@ -12,6 +12,7 @@ Bản mẫu web (mobile-first) của nhóm sinh viên môn Tư duy thiết kế,
 - Biên độ giá: `B(vùng, mùa, T) = phân vị 80 của |ΔP trong T ngày|`, dữ liệu cùng vùng, cùng mùa, 2 năm; thiếu 60 quan sát thì dùng cấp tỉnh; làm tròn 0,5%, giới hạn 3–20%. Đơn ≤3 ngày chốt giá cứng.
 - Cọc: người mua 10/5/3% theo hạng; thành viên HTX được HTX bảo lãnh, ngoài HTX cọc 3%. Hủy trước xác nhận lần 2 mất 30%, sau đó mất 100%, đã hái thêm công hái. Lý do hợp lệ (vượt biên độ, bất khả kháng) không phạt.
 - Tiền cọc thật do ngân hàng/tổ chức trung gian thanh toán được cấp phép hoặc HTX giữ; web chỉ hiển thị trạng thái.
+- Tiền về tay (ước tính) = tổng (kg từng loại × giá loại đó) − chi phí nông dân phải lo (công hái 600 đ/kg, xe 300 đ/kg nếu đơn ghi nông dân lo). Ước tính theo tỷ lệ loại nông dân khai; tiền thật tính theo biên bản cân. Đơn mua xô tính trên cả vườn; đơn mua lựa chỉ tính các loại đơn mua, phần còn lại của lứa bán cho đơn khác. Cọc là tiền của người mua, trừ vào phần người mua còn phải trả, không trừ vào tiền của nông dân.
 
 ## Chạy
 Mở `index.html` hoặc bật GitHub Pages (nhánh `main`, thư mục gốc). Không cần cài đặt.

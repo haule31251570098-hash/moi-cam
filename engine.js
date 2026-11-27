@@ -1,7 +1,7 @@
 /* Mối Cam - Lõi nghiệp vụ: lưu trạng thái, giá tham chiếu, biên độ, tính tiền, cọc, hợp đồng */
 (function () {
   var D = window.MC_DATA;
-  var KEY = "moicam_v2";
+  var KEY = "moicam_v3";
   var clone = function (o) { return JSON.parse(JSON.stringify(o)); };
 
   // ---------------- Lưu trạng thái ----------------
@@ -87,19 +87,27 @@
 
   // ---------------- Tiền ----------------
   function giaDon(don, l) { return l === "dat" ? (don.giaDat || 0) : ((don.gia || {})[l] || 0); }
-  // Ước tính tiền về tay cho nông dân khi bán kg theo tỷ lệ loại của lứa cam
-  function tinhTien(don, tyLe, kg, giaGhiDe) {
+  // Hai kiểu đơn:
+  //  - Mua xô (có cả Loại 1 và Loại 2): kg là tổng trái hái cả vườn, chia loại theo tỷ lệ; trái dạt nhận tới mức tối đa của đơn.
+  //  - Mua lựa (chỉ một vài loại): kg là số kg của đúng các loại đơn mua; phần trái còn lại của lứa bán cho đơn khác.
+  function laMuaXo(d) { return d.loaiCan.indexOf("loai1") >= 0 && d.loaiCan.indexOf("loai2") >= 0; }
+  function duocMua(d, l) { if (l === "bo") return false; if (l === "dat") return (d.loaiCan.indexOf("dat") >= 0 || laMuaXo(d)) && giaDon(d, "dat") > 0; return d.loaiCan.indexOf(l) >= 0; }
+  // Tiền về tay của nông dân = tổng (kg từng loại × giá loại đó) − chi phí nông dân phải lo (công hái, xe).
+  // thucTe = false: ước tính theo tỷ lệ loại nông dân khai. thucTe = true: theo biên bản cân (tyLe có cả % bỏ, kg là tổng cân).
+  function tinhTien(don, tyLe, kg, giaGhiDe, thucTe) {
     var g = giaGhiDe || { loai1: giaDon(don, "loai1"), loai2: giaDon(don, "loai2"), dat: giaDon(don, "dat") };
-    var chiDat = don.loaiCan.length === 1 && don.loaiCan[0] === "dat";
-    var dong = [], tong = 0, kgBan = 0, kgKhongMua = 0;
-    ["loai1", "loai2", "dat"].forEach(function (l) {
-      var k = chiDat ? (l === "dat" ? kg : 0) : kg * (tyLe[l] || 0) / 100;
+    var dong = [], tong = 0, kgBan = 0, kgKhongMua = 0, phan = {};
+    if (!thucTe && !laMuaXo(don)) {
+      var s = don.loaiCan.reduce(function (a, l) { return a + (tyLe[l] || 0); }, 0);
+      don.loaiCan.forEach(function (l) { phan[l] = s ? kg * (tyLe[l] || 0) / s : 0; });
+    } else ["loai1", "loai2", "dat", "bo"].forEach(function (l) { phan[l] = kg * (tyLe[l] || 0) / 100; });
+    ["loai1", "loai2", "dat", "bo"].forEach(function (l) {
+      var k = Math.round((phan[l] || 0) * 100) / 100;
       if (!k) return;
-      if (l === "dat" && !chiDat) { var toiDa = kg * (don.tyLeDatToiDa || 0) / 100; if (k > toiDa) { kgKhongMua += k - toiDa; k = toiDa; } }
-      var gia = g[l];
-      if (l !== "dat" && don.loaiCan.indexOf(l) < 0) gia = 0;
-      if (!gia || !k) { kgKhongMua += k; return; }
-      dong.push({ l: l, kg: k, gia: gia, tien: k * gia }); tong += k * gia; kgBan += k;
+      if (!duocMua(don, l) || !g[l]) { kgKhongMua += k; return; }
+      if (l === "dat") { var toiDa = kg * (don.tyLeDatToiDa || 0) / 100; if (k > toiDa) { kgKhongMua += k - toiDa; k = toiDa; } }
+      if (k <= 0) return;
+      dong.push({ l: l, kg: k, gia: g[l], tien: k * g[l] }); tong += k * g[l]; kgBan += k;
     });
     var tru = [];
     if (don.congHai === "nongdan") { var t1 = kgBan * S.thamSo.congHai; tru.push(["Công hái (nông dân trả)", t1]); tong -= t1; }
@@ -109,28 +117,48 @@
   function tyLeMacDinh(don) { return don.loaiCan.length === 1 && don.loaiCan[0] === "dat" ? { dat: 100 } : { loai1: 55, loai2: 30, dat: 15 }; }
   function phanTramCoc(nmId) { var nm = nguoiMua(nmId); var h = !nm.xacMinh ? "moi" : nm.hang; return S.thamSo.cocTheoHang[h] || S.thamSo.cocTheoHang.moi; }
 
+  // ---------------- Lứa cam: phần còn chưa có người mua ----------------
+  // Trừ dần theo các hợp đồng đã ký trên lứa: mua xô lấy đều mọi loại, mua lựa chỉ lấy các loại đơn mua.
+  function conLaiTheoLoai(lua) {
+    var tl = lua.tyLe, con = {};
+    ["loai1", "loai2", "dat"].forEach(function (l) { con[l] = lua.kg * (tl[l] || 0) / 100; });
+    S.hopDong.forEach(function (h) {
+      if (h.lua !== lua.id || h.trangThai === "da_huy") return;
+      var d = donMua(h.don);
+      if (laMuaXo(d)) ["loai1", "loai2", "dat"].forEach(function (l) { con[l] -= h.kg * (tl[l] || 0) / 100; });
+      else { var s = d.loaiCan.reduce(function (a, l) { return a + (tl[l] || 0); }, 0); d.loaiCan.forEach(function (l) { if (s) con[l] -= h.kg * (tl[l] || 0) / s; }); }
+    });
+    ["loai1", "loai2", "dat"].forEach(function (l) { con[l] = Math.max(0, Math.round(con[l])); });
+    return con;
+  }
+  function tongConLai(lua) { var c = conLaiTheoLoai(lua); return c.loai1 + c.loai2 + c.dat; }
+  function tyLeConLai(lua) { var c = conLaiTheoLoai(lua), t = c.loai1 + c.loai2 + c.dat; return t ? { loai1: c.loai1 / t * 100, loai2: c.loai2 / t * 100, dat: c.dat / t * 100 } : { loai1: 0, loai2: 0, dat: 0 }; }
+  // Số kg tối đa lứa này giao được cho đơn
+  function kgGiaoDuoc(d, lua) { var c = conLaiTheoLoai(lua); return laMuaXo(d) ? c.loai1 + c.loai2 + c.dat : d.loaiCan.reduce(function (a, l) { return a + (c[l] || 0); }, 0); }
+
   // ---------------- Kết nối: gợi ý ghép ----------------
   function ghepChoLua(lua) {
+    var tl = tyLeConLai(lua);
     return S.donMua.filter(function (d) { return d.trangThai === "mo"; }).map(function (d) {
       var lech = Math.abs(soNgay(lua.ngayChin, d.ngayCat));
-      var kg = Math.min(d.kg - daNhan(d), lua.kg);
-      var t = tinhTien(d, lua.tyLe, kg);
+      var kg = Math.min(d.kg - daNhan(d), kgGiaoDuoc(d, lua));
+      var t = tinhTien(d, tl, kg);
       var diem = t.tong / 1e6 - lech * 0.6 + (d.vung === nongDan(lua.nongDan).vung ? 1 : 0);
       return { don: d, kg: kg, tien: t, lechNgay: lech, diem: diem };
     }).filter(function (x) { return x.kg > 0 && x.lechNgay <= 6 && x.tien.kgBan > 0; }).sort(function (a, b) { return b.diem - a.diem; });
   }
   function daNhan(d) { return S.hopDong.filter(function (h) { return h.don === d.id && h.trangThai !== "da_huy"; }).reduce(function (s, h) { return s + h.kg; }, 0); }
   function ghepChoDon(d) {
-    return S.luaCam.filter(function (l) { return l.trangThai === "dang_ban" && Math.abs(soNgay(l.ngayChin, d.ngayCat)) <= 6; });
+    return S.luaCam.filter(function (l) { return l.trangThai === "dang_ban" && tongConLai(l) > 0 && Math.abs(soNgay(l.ngayChin, d.ngayCat)) <= 6; });
   }
 
   // ---------------- Hợp đồng ----------------
   function taoHopDong(donId, ndId, kg, luaId) {
-    var d = donMua(donId), nd = nongDan(ndId), lua = luaCam(luaId) || { tyLe: tyLeMacDinh(d) };
+    var d = donMua(donId), nd = nongDan(ndId), lua = luaCam(luaId);
     var T = soNgay(D.homNay, d.ngayCat);
     var ref = giaThamChieu(d.vung);
     var bd = d.cheDoGia === "biendo" ? bienDo(d.vung, d.ngayCat, T) : null;
-    var t = tinhTien(d, lua.tyLe, kg);
+    var t = tinhTien(d, lua ? tyLeConLai(lua) : tyLeMacDinh(d), kg);
     var tienCoc = Math.round(t.giaTri * phanTramCoc(d.nguoiMua) / 100 / 1000) * 1000;
     var hd = {
       id: "HD-" + (++S.demHD), don: donId, nongDan: ndId, lua: luaId || null, kg: kg, ngayKy: D.homNay,
@@ -216,7 +244,7 @@
     D: D, get S() { return S; }, luu: luu, datLai: datLai, fmt: fmt, TEN_LOAI: TEN_LOAI, TEN_MUA: TEN_MUA, TRANG_THAI: TRANG_THAI, TRANG_THAI_COC: TRANG_THAI_COC,
     soNgay: soNgay, congNgay: congNgay, muaVu: muaVu, vung: vung, nguoiMua: nguoiMua, nongDan: nongDan, donMua: donMua, hopDong: hopDong, luaCam: luaCam,
     giaThamChieu: giaThamChieu, congBoGia: congBoGia, trungVi: trungVi, bienDo: bienDo, xoaCacheBD: xoaCacheBD,
-    tinhTien: tinhTien, tyLeMacDinh: tyLeMacDinh, phanTramCoc: phanTramCoc, giaDon: giaDon,
+    tinhTien: tinhTien, laMuaXo: laMuaXo, conLaiTheoLoai: conLaiTheoLoai, tongConLai: tongConLai, tyLeConLai: tyLeConLai, kgGiaoDuoc: kgGiaoDuoc, tyLeMacDinh: tyLeMacDinh, phanTramCoc: phanTramCoc, giaDon: giaDon,
     ghepChoLua: ghepChoLua, ghepChoDon: ghepChoDon, daNhan: daNhan, taoHopDong: taoHopDong, tinhTrangGia: tinhTrangGia, truocChot: truocChot, HD: HD
   };
 })();
